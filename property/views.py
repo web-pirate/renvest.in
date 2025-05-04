@@ -1,3 +1,5 @@
+from property.price import predict_price
+import pandas as pd
 import socket
 from django.shortcuts import render, redirect, get_list_or_404
 from django.contrib.auth.models import User
@@ -62,7 +64,8 @@ def signup(request):
                 return redirect('home')
         except Exception as e:
             print("Daily limit Exceed")
-    return render(request, 'sign-up.html')
+            return redirect('sign-in')
+    return render(request, 'auth/sign-up.html')
 
 
 def send_email_after_registration(email, token):
@@ -368,10 +371,61 @@ def property_list(request):
 
 
 def mapview(request):
-    obj = get_list_or_404(MapLocater, id=1)
+    """
+    Handles the map view and predicts property prices based on user input.
+    """
+    try:
+        # Load data and extract unique locations
+        data = pd.read_csv(
+            r'C:\Users\Yamraj\Desktop\renvest\renvest.in\property\Bengaluru_House_Data.csv')
+        location_list = data['location'].unique()
 
-    context = {
-        'location': obj
-    }
+        if request.method == "POST":
+            location = request.POST.get('location')
+            sqft = float(request.POST.get('sqft', 0))
+            bhk = int(request.POST.get('bhk', 0))
+            bath = int(request.POST.get('bath', 0))
 
-    return render(request, "measurements.html")
+            # Validate inputs
+            if not location or sqft <= 0 or bhk <= 0 or bath <= 0:
+                messages.error(
+                    request, "Invalid input. Please provide valid details.")
+                return render(request, "measurements.html", {"location": location_list})
+
+            # Predict price
+            predicted_price = int(predict_price(
+                location, sqft, bath, bhk) * 10000)
+
+            return render(request, "predicted_price.html", {"value": predicted_price})
+
+        return render(request, "measurements.html", {"location": location_list})
+
+    except FileNotFoundError:
+        messages.error(
+            request, "Data file not found. Please check the file path.")
+        return render(request, "measurements.html", {"location": []})
+    except Exception as e:
+        print(f"Error in mapview: {e}")
+        messages.error(
+            request, "An error occurred while processing your request.")
+        return render(request, "measurements.html", {"location": []})
+
+
+def num2words(num):
+    under_20 = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+                'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen']
+    tens = ['Twenty', 'Thirty', 'Forty', 'Fifty',
+            'Sixty', 'Seventy', 'Eighty', 'Ninety']
+    above_100 = {100: 'Hundred', 1000: 'Thousand',
+                 100000: 'Lakhs', 10000000: 'Crores'}
+
+    if num < 20:
+        return under_20[num]
+
+    if num < 100:
+        return tens[(int)(num/10)-2] + ('' if num % 10 == 0 else ' ' + under_20[num % 10])
+
+    # find the appropriate pivot - 'Million' in 3,603,550, or 'Thousand' in 603,550
+    pivot = max([key for key in above_100.keys() if key <= num])
+
+    return num2words((int)(num/pivot)) + ' ' + above_100[pivot] + ('' if num % pivot == 0 else ' ' + num2words(num % pivot))

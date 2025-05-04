@@ -1,0 +1,22 @@
+{% extends "base.html" %} {% load static %} {% block content %} {% comment %}
+make a card to show price of House {% endcomment %}
+<div class="container mt-5">
+  <div class="row" style="margin-bottom: 50px">
+    <div class="col-md-6 offset-md-3">
+      <h3 class="mb-3">Predicted Price</h3>
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Predicted Price: {{ value }}</h5>
+          {% comment %}
+          <p class="card-text">Location: {{ location }}</p>
+          <p class="card-text">Square Feet: {{ sqft }}</p>
+          <p class="card-text">Number of Bathrooms: {{ bath }}</p>
+          <p class="card-text">Number of Bedrooms: {{ bhk }}</p>
+          {% endcomment %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  {% endblock %}
+</div>

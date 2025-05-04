@@ -50,6 +50,7 @@ urlpatterns = [
          name='property-listing'),
     path('property-list/', views.property_list,
          name='property-list'),
+    #     path('price_prediction/', views.price, name='price_prediction'),
 
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
